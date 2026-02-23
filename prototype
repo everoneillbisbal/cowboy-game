@@ -1,0 +1,306 @@
+import pygame
+import random
+
+w = 1005
+h = 670
+screen = pygame.display.set_mode((w, h))
+
+backgroundImage = pygame.image.load("images/farm_background.png").convert()
+backgroundPosition = backgroundImage.get_rect(center=(w / 2, h / 2))
+
+class Bullets():
+    def __init__(self, char_x, randnum):
+        self.rectangle = movingBullet.get_frect(center=(char_x - randnum, 365))
+
+
+class Characters(pygame.sprite.Sprite):
+    def __init__(self, image, x, y):
+        super().__init__()
+        self.image = pygame.image.load(image).convert_alpha()
+        self.transformedImage = pygame.transform.scale(self.image, (175, 175))
+        self.rectanglePosition = self.transformedImage.get_frect(center=(x, y))
+
+x = 500
+y = 475
+
+# Character in different positions.
+characterNeutralPosition = Characters("images/character_idle.png", x, y)
+characterRightLeg = Characters("images/right_animation.png", x, y)
+characterLeftLeg = Characters("images/middle_animation.png", x, y)
+
+characterShootingStance = pygame.image.load("images/cowboy_shoot.png").convert_alpha()
+characterShootingStance = pygame.transform.scale(characterShootingStance, (225, 225))
+
+# bullet
+
+b_x = 627
+
+
+movingBullet = pygame.image.load("images/bullet_projectile.png").convert_alpha()
+movingBullet = pygame.transform.scale(movingBullet, (100,100))
+movingBullet = pygame.transform.rotate(movingBullet, 35)
+
+
+# Cows
+cow_x = 0
+randDistance = random.randrange(100, 375)
+cowRightLeg = Characters("images/the_cow_image1.png", 700, 500)
+cowLeftLeg = Characters("images/the_cow_image2.png", 400, 500)
+grazingCow = Characters("images/cow_grazing.png", 150, 500)
+
+# This is for the jumping formula
+jumping = False
+upJump = 5
+m = 1
+
+velocity = 5
+facing = 0
+runningAnimation = 0
+
+
+def cowMovement():
+    global cowAnimation
+    global cow_x
+    if cow_x < randDistance:
+        if cowAnimation > 2:
+            cowAnimation = 0
+        if cowAnimation < 1:
+            cow_x += 1
+            cowAnimation += 0.06
+            cowRightLeg.rectanglePosition = cowRightLeg.rectanglePosition.move(
+                -cowAnimation, 0
+            )
+            screen.blit(cowRightLeg.transformedImage, cowRightLeg.rectanglePosition)
+
+        elif cowAnimation < 2:
+            cowAnimation += 0.06
+            cowRightLeg.rectanglePosition = cowRightLeg.rectanglePosition.move(
+                -cowAnimation, 0
+            )
+            screen.blit(cowLeftLeg.transformedImage, cowRightLeg.rectanglePosition)
+    elif cow_x < randDistance * 2:
+        if cowAnimation > 2:
+            cowAnimation = 0
+
+        if cowAnimation < 1:
+            cow_x += 1
+            cowAnimation += 0.06
+            cowRightLeg.rectanglePosition = cowRightLeg.rectanglePosition.move(
+                cowAnimation, 0
+            )
+            screen.blit(
+                pygame.transform.flip(
+                    cowLeftLeg.transformedImage, flip_x=True, flip_y=False
+                ),
+                cowRightLeg.rectanglePosition,
+            )
+        elif cowAnimation < 2:
+            cowAnimation += 0.06
+            cowRightLeg.rectanglePosition = cowRightLeg.rectanglePosition.move(
+                cowAnimation, 0
+            )
+            screen.blit(
+                pygame.transform.flip(
+                    cowRightLeg.transformedImage, flip_x=True, flip_y=False
+                ),
+                cowRightLeg.rectanglePosition,
+            )
+    elif cow_x >= randDistance * 2:
+        cow_x = 0
+
+
+cowAnimation = 0
+bullet_x = 0
+bullet_y = 0
+bullet_location = False
+bullet_fired = False
+bullet_list = []
+bullet_reset = 0
+left_face = False
+index = 0
+can_shoot = False
+
+def main():
+    global jumping
+    global upJump
+    global m
+    global facing
+    global cowAnimation
+    global runningAnimation
+    global cow_x
+    global b_x
+    global bullet_location
+    global bullet_fired
+    global bullet_x
+    global bullet_y
+    global bullet_reset
+    global left_face
+    global bullet_list
+    global can_shoot
+    global index
+    global Bullets
+
+
+    clock = pygame.time.Clock()
+    running = True
+    while running:
+        clock.tick(30)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_a]:            
+            b_x -= velocity
+            characterNeutralPosition.rectanglePosition = (
+                characterNeutralPosition.rectanglePosition.move(-velocity, 0)
+            )
+            facing = 2
+        
+        elif keys[pygame.K_d]:            
+            b_x += velocity
+            characterNeutralPosition.rectanglePosition = (
+                characterNeutralPosition.rectanglePosition.move(velocity, 0)
+            )
+            facing = 1
+            
+        if jumping == False:
+            if keys[pygame.K_SPACE]:
+                jumping = True
+        if jumping:
+            F = (1 / 2) * m * (upJump**2)
+            characterNeutralPosition.rectanglePosition = (
+                characterNeutralPosition.rectanglePosition.move(0, -F)
+            )
+            upJump = upJump - 1
+        if upJump < 0:
+            m = -1
+        if upJump == -6:
+            jumping = False
+            upJump = 5
+            m = 1
+
+        screen.blit(backgroundImage, backgroundPosition)
+
+        mouse = pygame.mouse.get_pressed()
+        if mouse[0] == True:
+            index += 1
+            bullet_list.extend(['1', '2'])
+            bullet_fired = True
+            bullet_list[index] = Bullets(b_x, 0)
+            mouse = 1
+
+        elif mouse[2] == True:
+            index += 1
+            bullet_list.extend(['1', '2'])
+            bullet_fired = True
+            bullet_list[index] = Bullets(b_x, 202)
+            mouse = 2
+
+
+  
+        screen.blit(
+            pygame.transform.flip(
+                grazingCow.transformedImage, flip_x=True, flip_y=False
+            ),
+            grazingCow.rectanglePosition,
+        )
+
+        cowMovement()
+  
+
+        if facing == 2:
+            can_shoot = False
+            if runningAnimation >= 2:
+                runningAnimation = 0
+            if runningAnimation <= 1:
+                runningAnimation += 0.2
+                screen.blit(
+                    pygame.transform.flip(
+                        characterRightLeg.transformedImage, flip_x=True, flip_y=False
+                    ),
+                    characterNeutralPosition.rectanglePosition,
+                )
+
+            elif runningAnimation <= 2:
+                can_shoot = False
+                runningAnimation += 0.2
+                screen.blit(
+                    pygame.transform.flip(
+                        characterLeftLeg.transformedImage, flip_x=True, flip_y=False
+                    ),
+                    characterNeutralPosition.rectanglePosition,
+                )
+                facing = 0
+
+        elif facing == 1:
+            can_shoot = False
+            if runningAnimation >= 2:
+                runningAnimation = 0
+            if runningAnimation <= 1:
+                runningAnimation += 0.2
+                screen.blit(
+                    characterRightLeg.transformedImage,
+                    characterNeutralPosition.rectanglePosition,
+                )
+            elif runningAnimation <= 2:
+                can_shoot = False
+                runningAnimation += 0.2
+                screen.blit(
+                    characterLeftLeg.transformedImage,
+                    characterNeutralPosition.rectanglePosition,
+                )
+                facing = 0
+
+        elif mouse == 2:
+            can_shoot = True
+            screen.blit(pygame.transform.flip(characterShootingStance, flip_x=True, flip_y=False
+                ),
+                characterNeutralPosition.rectanglePosition.move(0, -30))
+            left_face = True
+
+        elif mouse == 1:
+            can_shoot = True
+            screen.blit(
+                characterShootingStance, characterNeutralPosition.rectanglePosition.move(0, -30)
+            )
+            left_face = False
+        
+        else:
+            facing = 0
+            screen.blit(
+                characterNeutralPosition.transformedImage,
+                characterNeutralPosition.rectanglePosition,
+            )
+
+        if left_face == True:
+            if can_shoot == True:
+                if bullet_fired == True:
+                    bullet_reset += 1
+                    bullet_x += 75
+                    bullet_y += 75
+                    screen.blit(pygame.transform.flip(movingBullet, flip_x=True, flip_y=False), bullet_list[index].rectangle.move(-bullet_x, -bullet_y))
+                    if bullet_reset == 18:
+                        bullet_x = 0
+                        bullet_y = 0
+                        bullet_reset = 0
+                        bullet_fired = False
+
+        elif can_shoot == True:  
+            if left_face == False:
+                if bullet_fired == True:
+                    bullet_reset += 1
+                    bullet_x += 75
+                    bullet_y += 75
+                    screen.blit(movingBullet, bullet_list[index].rectangle.move(bullet_x, -bullet_y))
+                if bullet_reset == 18:
+                    bullet_x = 0
+                    bullet_y = 0
+                    bullet_reset = 0
+                    bullet_fired = False
+
+        pygame.display.update()
+
+
+
+main()
